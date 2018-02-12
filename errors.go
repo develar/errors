@@ -146,6 +146,12 @@ func WithStack(err error) error {
 	if err == nil {
 		return nil
 	}
+
+	_, ok := err.(Causer)
+	if ok {
+		return err
+	}
+
 	return &withStack{
 		err,
 		callers(),
@@ -267,16 +273,16 @@ func (w *withMessage) Format(s fmt.State, verb rune) {
 // be returned. If the error is nil, nil will be returned without further
 // investigation.
 func Cause(err error) error {
-	type causer interface {
-		Cause() error
-	}
-
 	for err != nil {
-		cause, ok := err.(causer)
+		cause, ok := err.(Causer)
 		if !ok {
 			break
 		}
 		err = cause.Cause()
 	}
 	return err
+}
+
+type Causer interface {
+	Cause() error
 }
